@@ -2,52 +2,66 @@ from os import path
 import os
 import sys
 import argparse
+import logging
+import time
 from pytube import YouTube
 
-def record_stream_data(stream):
+formats = ['mp4', '3gpp', 'webm']
+#logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('Download logger')
+
+def record_stream_data(yt, stream):
     # TODO decide what info would be useful and record it here
     # stream.fmt_profile -> fps, abr, resolution
+    # stream.itag ?
     # stream.filesize
-    # stream.player_config_args, only some of them are actually useful like keywords
+    # stream.player_config_args['keywords'], only some of them are actually useful like keywords
     # stream.mime_type
-
+    # yt.title
+    # yt.captions.captions # This is a list, may be empty. Use as condition for valid stream?
+    # yt.video_id
     pass
 
 def is_valid_stream(stream):
-    # TODO implement the conditions for a video stream to be valid eg. quality, resolution, fps
-    # maybe based on stream.itag?
-    return stream.resolution >= 360
+    res = stream.resolution[:-1]
+    return int(res) >= 360 and int(res) <= 480 #and stream.includes_video_track and stream.includes_audio_track
 
-def single_file_download_urls(input_filename, output_folder):
+def get_valid_stream(streams):
+    for stream in streams[::-1]:  # They are ordered in descending resolution, we want the highest res so we reverse the order
+        if is_valid_stream(stream):
+            return stream
+
+def single_file_download_url(input_filename, output_folder):
     '''Downloads videos from URL in input_file. URLs should be separated by newlines.
     '''
     with open(input_filename) as f:
         for line in f:
-            try:
-                yt = YouTube(line)
-                streams = yt.streams.filter(progressive=True).desc().all()  # We only want the whole file
-                print(streams)
-                for stream in streams:
-                    if is_valid_stream(stream):
-                        # TODO parallelize this part. Or not.
+            yt = YouTube(line)
+            streams_by_type = [yt.streams.filter(type='video', subtype=tp).order_by('resolution').all() for tp in formats]
+            # TODO parallelize this part. Or not.
+            for streams in streams_by_type:
+                stream = get_valid_stream(streams)
+                if stream is not None:
+                    try:
                         stream.download(output_folder)
-                        # TODO log that this stream has been downloaded
+                        logger.info('Stream for {} has been downloaded'.format(yt.title))
+                        record_stream_data(yt, stream)
                         break
-                # TODO log that this video wasn't downloaded because none of its streams satisfied is_valid_stream
-            except:
-                print('something bad happened while downloading')
-                pass
-                # TODO log that an error occurred while trying to download this video
+                    except:
+                        logger.error('{}, video id {}, itag {} not downloaded: connection error or something'.format(yt.title, yt.video_id, stream.itag))
+                        pass
+            logger.warning('{}, video id {}, itag {} not downloaded: no valid formats'.format(yt.title, yt.video_id, stream.itag))
 
 def download_folder_url(input_folder, output_folder):
     all_files = [f for f in os.listdir(input_folder) if path.isfile(path.join(input_folder, f))]
     for filename in all_files:
-        single_file_download_urls(path.join(input_folder, filename), output_folder)
+        single_file_download_url(path.join(input_folder, filename), output_folder)
 
 if __name__ == '__main__':
     arguments = sys.argv
     proj_root = path.join('..', path.dirname(__file__))
     output_folder = path.join(proj_root, 'data', 'video', 'unprocessed')
+    logging.basicConfig(filename=path.join(proj_root, 'logs', time.strftime("%a, %d %b %Y %H:%M:%S ", time.localtime())+time.tzname[0]))
     if len(arguments) > 2:
         raise ValueError('Wrong number of arguments. Single argument must be either the relative path from project root directory to directory in which input files live or a single input file.')
     elif len(arguments) == 1:
@@ -59,6 +73,6 @@ if __name__ == '__main__':
 
     if path.isfile(input_folder):
         # user actually input a file
-        single_file_download_urls(input_folder)
+        single_file_download_url(input_folder)
     else:
         download_folder_url(input_folder, output_folder)
