@@ -14,4 +14,12 @@ significance of objects, actions and places through video and some background da
 - indoor context
 - in English
 - duration of interest should be 2 minutes or less
-- must have some action involved
+- include start and end time of the period of interest
+- must have English captions
+- must have some action and interaction between actors involved
+
+##Instructions
+Run all python files with src directory as working directory in the following order:
+- initdb.py
+- download.py
+- process.py
