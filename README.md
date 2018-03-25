@@ -8,7 +8,7 @@ final year project.
 The goal is to broadly understand occurrences of events, relationships between characters,
 significance of objects, actions and places through video and some background data.
 
-##Context for videos we are looking for:
+## Context for videos we are looking for:
 - 2 - 4 people
 - must be able to see torso and face (optional)
 - must have an indoor context
@@ -18,8 +18,8 @@ significance of objects, actions and places through video and some background da
 - include start and end time of the period of interest unless the whole video should be included
 - must have some action and interaction between actors involved
 
-##Instructions
-###Processing
+## Instructions
+### Processing
 
 Run the following for prerequisites:
 ```
@@ -34,7 +34,7 @@ python download.py
 python process.py
 ```
 
-###Usage of data
+### Usage of data
 
 Copy the `data/video/processed`, `data/audio` and `db` directories to the directory where you will be using the data. Also copy `src/extractor.py` to the direcory where you will be using the data.
 
