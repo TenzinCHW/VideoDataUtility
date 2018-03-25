@@ -3,78 +3,93 @@ import sys
 import argparse
 import logging
 import time
+import sqlite3
 from pytube import YouTube
 
 formats = ['mp4', '3gpp', 'webm']
+proj_root = os.path.join('..', os.path.dirname(__file__))
 logger = logging.getLogger('Download logger')
 
-def record_stream_data(yt, stream):
-    # TODO decide what info would be useful and record it here
-    # stream.fmt_profile -> fps, abr, resolution
-    # stream.itag ?
-    # stream.filesize
-    # stream.player_config_args['keywords'], only some of them are actually useful like keywords
-    # stream.mime_type
-    # yt.title
-    # yt.captions.captions # This is a list, may be empty. Use as condition for valid stream?
-    # yt.video_id
-    pass
+def record_stream_data(yt, stream, start, end, sqlite_conn, conn_cursor):
+    '''start and end are the start and end times in seconds as strings
+    '''
+    vid = yt.video_id
+    title = yt.title
+    fmt = stream.fmt_profile
+    res, fps, abr = fmt['resolution'], fmt['fps'], fmt['abr']
+    kw = stream.player_config_args['keywords']
+    itag = stream.itag
+    mime = stream.mime_type
+    length = int(stream.player_config_args['length_seconds'])
+    cap = yt.captions.get_by_language_code('en').generate_srt_captions()
+    start, end = int(start), int(end)
+    if start < 0:
+        raise ValueError('Start time of {} is before the start of the video'.format(start_t))
+    elif end > length:
+        raise ValueError('End time of {} is too long. Full length is {}'.format(end_t, full_length))
+    data = (vid, title, fps, abr, res, kw, itag, mime, length, cap, start, end)
+    conn_cursor.execute('''INSERT INTO metadata (video_id, title, fps, abr, resolution, keywords, itag, mime_type, full_length_sec, captions, start_time, end_time) VALUES ({})'''.format('?,'*11+'?'), data)
+    sqlite_conn.commit()
 
-def is_valid_stream(stream):
+def is_valid_stream(yt, stream, lower_res, upper_res):
     res = stream.resolution[:-1]
-    return int(res) >= 360 and int(res) <= 480 #and stream.includes_video_track and stream.includes_audio_track
+    return int(res) >= lower_res and int(res) <= upper_res and stream.includes_video_track and stream.includes_audio_track and yt.captions.get_by_language_code('en') is not None
 
-def get_valid_stream(streams):
+def get_valid_stream(yt, streams, lower_res=360, upper_res=480):
     for stream in streams[::-1]:  # They are ordered in descending resolution, we want the highest res so we reverse the order
-        if is_valid_stream(stream):
+        if is_valid_stream(yt, stream, lower_res, upper_res):
             return stream
 
-def single_file_download_url(input_filename, output_folder):
+def single_file_download_url(input_filename, output_dir, sqlite_conn, conn_cursor):
     '''Downloads videos from URL in input_file. URLs should be separated by newlines.
     '''
     with open(input_filename) as f:
         for line in f:
+            link, start, end = line.split(' ')  # start and end should be whole numbers representing start and end times in seconds as a string
             yt = YouTube(line)
-            # TODO check if this file has been downloaded
-            streams_by_type = [yt.streams.filter(type='video', subtype=tp).order_by('resolution').all() for tp in formats]
-            # TODO parallelize this part. Or not.
-            for i, streams in enumerate(streams_by_type):
-                stream = get_valid_stream(streams)
-                if stream is not None:
-                    try:
-                        stream.download(output_path=output_folder, filename=yt.video_id)
-                        logger.info('Stream for {} with video id {} has been downloaded'.format(yt.title, yt.video_id))
-                        record_stream_data(yt, stream)
-                        break
-                    except:
-                        logger.error('{}, video id {}, itag {} not downloaded: connection error or something'.format(yt.title, yt.video_id, stream.itag))
-                        pass
-                logger.warning('{}, video id {}, subtype {} not downloaded: no valid formats'.format(yt.title, yt.video_id, formats[i]))
+            conn_cursor.execute('SELECT video_id FROM metadata WHERE video_id=?', (yt.video_id,))
+            if conn_cursor.fetchone() is None:  # No records of this video in metadata, proceed to download
+                streams_by_type = [yt.streams.filter(type='video', subtype=tp).order_by('resolution').all() for tp in formats]
+                for i, streams in enumerate(streams_by_type):
+                    stream = get_valid_stream(yt, streams)
+                    if stream is not None:
+                        #try:
+                            record_stream_data(yt, stream, start, end, sqlite_conn, conn_cursor)
+                            stream.download(output_path=output_dir, filename=yt.video_id)
+                            logger.info('Stream for {} with video id {} has been downloaded'.format(yt.title, yt.video_id))
+                            break
+                        #except:
+                        #    logger.error('{}, video id {}, itag {} not downloaded: connection error or something'.format(yt.title, yt.video_id, stream.itag))
+                    logger.warning('{}, video id {}, subtype {} not downloaded: no valid formats'.format(yt.title, yt.video_id, formats[i]))
 
-def download_folder_url(input_folder, output_folder):
-    all_files = [f for f in os.listdir(input_folder) if os.path.isfile(os.path.join(input_folder, f))]
+def download_folder_url(input_dir, output_dir, sqlite_conn, conn_cursor):
+    all_files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
     for filename in all_files:
         if filename != '.gitkeep':
-            single_file_download_url(os.path.join(input_folder, filename), output_folder)
+            single_file_download_url(os.path.join(input_folder, filename), output_dir, sqlite_conn, conn_cursor)
 
 if __name__ == '__main__':
     arguments = sys.argv
-    proj_root = os.path.join('..', os.path.dirname(__file__))
-    output_folder = os.path.join(proj_root, 'data', 'video', 'unprocessed')
+    output_dir = os.path.join(proj_root, 'data', 'video', 'unprocessed')
     logging.basicConfig(filename=os.path.join(proj_root, 'logs', time.strftime("DownloadLog_%a,%d-%b-%Y-%H:%M:%S_", time.localtime())+time.tzname[0]), \
        format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
     if len(arguments) > 2:
         raise ValueError('Wrong number of arguments. Single argument must be either the relative path from project root directory to directory in which input files live or a single input file.')
     elif len(arguments) == 1:
-        input_folder = os.path.join(proj_root, 'input', 'links')
+        input_folder = os.path.join(proj_root, 'input')
     else:
         parser = argparse.ArgumentParser('Download input folder url')
         parser.add_argument('folder', help='Youtube videos in files in given directory will be downloaded to data/video/unprocessed.')
         input_folder = os.path.join(proj_root, parser.parse_args().folder)
 
+    conn = sqlite3.connect(os.path.join(proj_root, 'db', 'metadata.db'))
+    c = conn.cursor()
+
     if os.path.isfile(input_folder):
         # user actually input a file
-        single_file_download_url(input_folder)
+        single_file_download_url(input_folder, output_dir, conn, c)
     else:
-        download_folder_url(input_folder, output_folder)
+        download_folder_url(input_folder, output_dir, conn, c)
+
+    conn.close()

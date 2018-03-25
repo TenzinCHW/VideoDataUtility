@@ -38,12 +38,12 @@ print('video id', yt.video_id)
 cap = yt.captions
 #['__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'all', 'captions', 'get_by_language_code', 'lang_code_index']
 #print('captions captions', cap.captions)
-#print('captions all', cap.all()) # same as cap.captions
+print('captions all', cap.all()) # same as cap.captions
 #print('captions get by lang code', cap.get_by_language_code)
 #print('captions lang code index', cap.lang_code_index)
 
-realcaption = cap.captions[0] # what if it's empty lol
-print(realcaption)
+#realcaption = cap.captions[0] # what if it's empty lol
+#print(realcaption)
 #print(dir(cap.captions[0]))
 #['__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'code', 'float_to_srt_time_format', 'generate_srt_captions', 'name', 'url', 'xml_caption_to_srt', 'xml_captions']
 #print('cap code', realcaption.code)
