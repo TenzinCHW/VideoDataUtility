@@ -24,9 +24,11 @@ def record_stream_data(yt, stream, start, end, sqlite_conn, conn_cursor):
     cap = yt.captions.get_by_language_code('en').generate_srt_captions()
     start, end = int(start), int(end)
     if start < 0:
-        raise ValueError('Start time of {} is before the start of the video'.format(start_t))
+        raise ValueError('Start time of {} is before the start of the {} with video id {}'.format(start, title, vid))
     elif end > length:
-        raise ValueError('End time of {} is too long. Full length is {}'.format(end_t, full_length))
+        raise ValueError('End time of {} is too long for {} with video id {}. Full length is {}'.format(end, title, vid, length))
+    elif end < start:
+        raise ValueError('End time of {} is before start time of {} for {} with id {}'.format(end, start, title, vid))
     data = (vid, title, fps, abr, res, kw, itag, mime, length, cap, start, end)
     conn_cursor.execute('''INSERT INTO metadata (video_id, title, fps, abr, resolution, keywords, itag, mime_type, full_length_sec, captions, start_time, end_time) VALUES ({})'''.format('?,'*11+'?'), data)
     sqlite_conn.commit()
