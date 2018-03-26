@@ -25,6 +25,7 @@ Run the following for prerequisites:
 ```
 pip install -r requirements.txt
 mkdir -p data/video/processed data/video/unprocessed data/audio logs db
+sudo apt-get install ffmpeg
 ```
 
 Run all python files with src directory as working directory in the following order:
