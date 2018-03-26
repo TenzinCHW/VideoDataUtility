@@ -23,7 +23,7 @@ significance of objects, actions and places through video and some background da
 
 Run the following for prerequisites:
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 mkdir -p data/video/processed data/video/unprocessed data/audio logs db
 ```
 

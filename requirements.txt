@@ -1,0 +1,4 @@
+numpy==1.14.2
+pytube==9.1.0
+scipy==1.0.0
+sk-video==1.1.10
