@@ -1,11 +1,13 @@
 import skvideo.io
+import sqlite3
 import os
+import random
 
 class Video():
-    def __init__(self, filepath, db_dir):
+    def __init__(self, filepath):
         self.filepath = filepath
 
-    def frame_iterator(h=480, w=854, step_sz=1):
+    def frame_iterator(self, step_sz=1):
         reader = skvideo.io.vreader(self.filepath)
         for i, frame in enumerate(reader):
             if i % step_sz == 0:
@@ -20,16 +22,20 @@ class Extractor():
         self.conn = sqlite3.connect(db)
         self.conn_c = self.conn.cursor()
 
-    def video_loop():
-        all_files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+    def video_loop(self):
+        all_files = [f for f in os.listdir(self.video_dir) if os.path.isfile(os.path.join(self.video_dir, f))]
+        random.shuffle(all_files)
         for filename in all_files:
             video_id = filename.split('.')[0]
-            yield video_id, Video(os.path.join(self.video_dir, filename)
+            yield video_id, Video(os.path.join(self.video_dir, filename))
 
-    def audio_loop():
-        pass  # TODO after extracting audio, do this
+    def audio_loop(self):
+        all_files = [f for f in os.listdir(self.audio_dir) if os.path.isfile(os.path.join(self.audio_dir, f))]
+        random.shuffle(all_files)
+        for filename in all_files:
+            yield filename
 
-    def get_metadata(video_id, list_of_attributes):
+    def get_metadata(self, video_id, list_of_attributes):
         '''list_of_attributes can contain title, fps, abr, resolution, keywords, itag, mime_type, full_length_sec, captions, start_time or end_time
         fps - framse per second
         abr - audio bitrate
@@ -38,6 +44,6 @@ class Extractor():
         full_length_sec - length of full video before processing
         start_time and end_time - start and end time between which processed video was extracted from unprocessed video
         '''
-        query = str(list_of_attributes)[1:-1]
-        self.cursor.execute('SELECT {} FROM metadata WHERE video_id=?'.format(query), (video_id,))
-        return self.cursor.fetchone()
+        query = ','.join(list_of_attributes)
+        self.conn_c.execute('SELECT {} FROM metadata WHERE video_id=?'.format(query), (video_id,))
+        return self.conn_c.fetchone()

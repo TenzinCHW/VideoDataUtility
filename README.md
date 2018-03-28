@@ -41,7 +41,10 @@ Copy the `data/video/processed`, `data/audio` and `db` directories to the direct
 
 In your script, create an `Extractor` object using the full paths of the new locations for the `data/video/processed`, `data/audio` and `db` directories.
 
-```extractor = Extractor(video_path, audio_path, db_path)```
+```
+from extractor import Extractor
+ext = Extractor(video_path, audio_path, db_path)
+```
 
 To get an iterator object over the videos, call video_loop:
 
@@ -54,11 +57,11 @@ for video_id, video in vidlooper:  # To get the frames, you must create a frame 
         pass
 ```
 
-You may also include parameters to get a different sized numpy array for each frame or to skip every n frames:
+You may also include parameters to skip every n frames:
 ```
 n = 5
 for video in vidlooper:
-    vid_frame_iterator = video.frame_iterator(h=480, w=854, step_sz=n)
+    vid_frame_iterator = video.frame_iterator(step_sz=n)
     for frame in vid_frame_iterator:
         # Do stuff with frame.
         pass
