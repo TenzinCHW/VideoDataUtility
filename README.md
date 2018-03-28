@@ -53,7 +53,7 @@ vidlooper = extractor.video_loop()
 for video_id, video in vidlooper:  # To get the frames, you must create a frame iterator from each video
     vid_frame_iterator = video.frame_iterator()
     for frame in vid_frame_iterator:
-        # Do stuff with frame. frame is a numpy array of h*w*
+        # Do stuff with frame. frame is a numpy array of h*w*c
         pass
 ```
 
