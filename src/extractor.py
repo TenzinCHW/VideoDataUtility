@@ -22,16 +22,18 @@ class Extractor():
         self.conn = sqlite3.connect(db)
         self.conn_c = self.conn.cursor()
 
-    def video_loop(self):
+    def video_loop(self, shuffle=True):
         all_files = [f for f in os.listdir(self.video_dir) if os.path.isfile(os.path.join(self.video_dir, f))]
-        random.shuffle(all_files)
+        if shuffle:
+            random.shuffle(all_files)
         for filename in all_files:
             video_id = filename.split('.')[0]
             yield video_id, Video(os.path.join(self.video_dir, filename))
 
-    def audio_loop(self):
+    def audio_loop(self, shuffle=True):
         all_files = [f for f in os.listdir(self.audio_dir) if os.path.isfile(os.path.join(self.audio_dir, f))]
-        random.shuffle(all_files)
+        if shuffle:
+            random.shuffle(all_files)
         for filename in all_files:
             yield filename
 

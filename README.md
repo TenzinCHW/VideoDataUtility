@@ -28,6 +28,10 @@ mkdir -p input data/video/processed data/video/unprocessed data/audio logs db
 sudo apt-get install ffmpeg
 ```
 
+In the `input` folder, add a file (any name) with the links to the video and start and end times (in seconds) separated by a space.
+e.g.
+`https://www.youtube.com/watch?v=yZDQwfBtyO8 24 62`
+
 Run all python files with src directory as working directory in the following order:
 ```
 python initdb.py
@@ -49,9 +53,9 @@ ext = Extractor(video_path, audio_path, db_path)
 To get an iterator object over the videos, call video_loop:
 
 ```
-vidlooper = extractor.video_loop()
-for video_id, video in vidlooper:  # To get the frames, you must create a frame iterator from each video
-    vid_frame_iterator = video.frame_iterator()
+vidlooper = ext.video_loop()  # Use ext.video_loop(shuffle=False) to loop through videos in same order every time
+for video_id, video in vidlooper:
+    vid_frame_iterator = video.frame_iterator()  # To get the frames, you must create a frame iterator from each video
     for frame in vid_frame_iterator:
         # Do stuff with frame. frame is a numpy array of h*w*c
         pass
@@ -60,15 +64,27 @@ for video_id, video in vidlooper:  # To get the frames, you must create a frame 
 You may also include parameters to skip every n frames:
 ```
 n = 5
-for video in vidlooper:
+for video_id, video in vidlooper:
     vid_frame_iterator = video.frame_iterator(step_sz=n)
     for frame in vid_frame_iterator:
         # Do stuff with frame.
         pass
 ```
 
-To get metadata for a video, use the `Extractor` object.
-`extractor.get_metadata(video_id, ['fps','abr','captions'])`
+To get an iterator object over all the audio filenames, call audio_loop:
+```
+audlooper = ext.audio_loop()  # Use ext.audio_loop(shuffle=False) to loop through audio filenames in the same order every time
+for audio in audlooper:
+    print(audio)
+```
+
+To get metadata for a video, use the `Extractor` object:
+```
+vidlooper = ext.video_loop()
+for video_id, video in vidlooper:
+    fps, abr, captions = extractor.get_metadata(video_id, ['fps','abr','captions'])
+    # Do something with fps, abr and captions
+```
 
 The interesting attributes listed above come in the following format:
 - `fps` is frames per second as an integer
