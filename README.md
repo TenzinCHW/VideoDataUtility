@@ -24,7 +24,7 @@ significance of objects, actions and places through video and some background da
 Run the following for prerequisites:
 ```
 pip install -r requirements.txt
-mkdir -p data/video/processed data/video/unprocessed data/audio logs db
+mkdir -p input data/video/processed data/video/unprocessed data/audio logs db
 sudo apt-get install ffmpeg
 ```
 
