@@ -66,3 +66,5 @@ if __name__ == '__main__':
     c = conn.cursor()
 
     process_videos(input_dir, vid_output_dir, aud_output_dir, c)
+
+    conn.close()

@@ -49,3 +49,6 @@ class Extractor():
         query = ','.join(list_of_attributes)
         self.conn_c.execute('SELECT {} FROM metadata WHERE video_id=?'.format(query), (video_id,))
         return self.conn_c.fetchone()
+
+    def __del__(self):
+        self.conn.close()
