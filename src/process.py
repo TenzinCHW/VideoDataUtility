@@ -12,7 +12,7 @@ logger = logging.getLogger('Data Processing logger')
 
 def get_start_end_frame(fps, start_time, end_time):
     start_frame, end_frame = start_time * fps, end_time * fps
-    return start_frame, end_frame
+    return int(start_frame), int(end_frame)
 
 def get_metadata(yt_video_id, conn_cursor):
     conn_cursor.execute('SELECT fps, abr, full_length_sec, start_time, end_time FROM metadata WHERE video_id=?', (yt_video_id,))
@@ -43,6 +43,7 @@ def rip_video_as_array(filename, input_dir, output_dir, conn_cursor):
     if end_t == -1:
         video_arr = skvideo.io.vread(input_filepath)
     else:
+        print(start_frame, end_frame, fps)
         video_arr = skvideo.io.vread(input_filepath, num_frames=end_frame)
     output = video_arr[start_frame:]
     skvideo.io.vwrite(output_filepath, output)
