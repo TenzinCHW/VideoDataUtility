@@ -39,7 +39,7 @@ def record_stream_data(yt, stream, filename, start, end, sqlite_conn, conn_curso
         raise ValueError('Start time of {} is before the start of the {} with video id {}.'.format(start, title, vid))
     elif end > length or end < -1:
         raise ValueError('End time of {} is not in a valid range for {} with video id {}. Full length is {}. Set to -1 for whole video to be included.'.format(end, title, vid, length))
-    elif end < start:
+    elif end < start and end != -1:
         raise ValueError('End time of {} is before start time of {} for {} with id {}.'.format(end, start, title, vid))
     data = (vid, title, fps, abr, res, kw, itag, mime, length, cap, start, end)
     conn_cursor.execute('''INSERT INTO metadata (video_id, title, fps, abr, resolution, keywords, itag, mime_type, full_length_sec, captions, start_time, end_time) VALUES ({})'''.format('?,'*11+'?'), data)
@@ -53,6 +53,11 @@ def get_valid_stream(yt, streams, lower_res=360, upper_res=480):
     for stream in streams[::-1]:  # They are ordered in descending resolution, we want the highest res so we reverse the order
         if is_valid_stream(yt, stream, lower_res, upper_res):
             return stream
+
+def get_filename(yt, stream, start, end):
+    if end == '-1':
+        end = stream.player_config_args['length_seconds']
+    return yt.video_id + '-' + start + '-' + end
 
 def single_file_download_url(input_filename, output_dir, sqlite_conn, conn_cursor):
     '''Downloads videos from URL in input_file. URLs should be separated by newlines.
@@ -68,7 +73,7 @@ def single_file_download_url(input_filename, output_dir, sqlite_conn, conn_curso
                     stream = get_valid_stream(yt, streams)
                     if stream is not None:
                         #try:
-                            filename = yt.video_id+'-'+start+'-'+end
+                            filename = get_filename(yt, stream, start, end)
                             record_stream_data(yt, stream, filename, start, end, sqlite_conn, conn_cursor)
                             stream.download(output_path=output_dir, filename=filename)
                             update_true_fps(filename, os.path.join(output_dir, filename+'.'+stream.subtype),  sqlite_conn, conn_cursor) 

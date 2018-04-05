@@ -43,7 +43,6 @@ def rip_video_as_array(filename, input_dir, output_dir, conn_cursor):
     if end_t == -1:
         video_arr = skvideo.io.vread(input_filepath)
     else:
-        print(start_frame, end_frame, fps)
         video_arr = skvideo.io.vread(input_filepath, num_frames=end_frame)
     output = video_arr[start_frame:]
     skvideo.io.vwrite(output_filepath, output)
