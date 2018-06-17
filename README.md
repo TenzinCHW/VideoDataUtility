@@ -90,3 +90,9 @@ The interesting attributes listed above come in the following format:
 - `fps` is frames per second as an integer
 - `abr` is a string of the audio bitrate (i.e. '124kbps')
 - `captions` is the srt form of the captions as a string
+
+
+### TODO
+Some things I might want to build into the project (with links):
+- Detect scene changes http://www.scikit-video.org/stable/_modules/skvideo/measure/scene.html
+- Download only once DONE
