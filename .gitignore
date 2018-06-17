@@ -2,6 +2,8 @@ data/
 input/
 logs/
 db/
+tests/
+*.txt
 
 
 # Byte-compiled / optimized / DLL files
